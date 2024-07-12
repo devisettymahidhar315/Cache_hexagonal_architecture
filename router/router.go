@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var length = 2
-
 type Router struct {
-	d *usecase.Backends
+	d   *usecase.Backends
+	len int
 }
 
-func Init(w *usecase.Backends) *Router {
+func Init(w *usecase.Backends, length int) *Router {
 	return &Router{
-		d: w,
+		d:   w,
+		len: length,
 	}
 }
 
@@ -59,7 +59,7 @@ func (e *Router) Set(ctx *gin.Context) {
 
 	time1, _ := strconv.Atoi(time)
 
-	e.d.Set(key, value, length, time1)
+	e.d.Set(key, value, e.len, time1)
 	ctx.JSON(http.StatusOK, gin.H{
 		"output": "successfully key added",
 	})
