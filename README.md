@@ -18,13 +18,13 @@
 # Accessing the Functions we are using the postman
 ## Get Function
 ### you can select the get method 
-### ```http://localhost:8080/key```
-### ```http://localhost:8080/print```
+### printing the particular key ```http://localhost:8080/key```
+### printing the entire data ```http://localhost:8080/print```
 
 ## Delete Function
 ### delete the data
 ### you can select the delete method
-### delete partcular command ```http://localhost:8080/key```
+### delete partcular key  ```http://localhost:8080/key```
 ### delete entire data ```http://localhost:8080/all```
 
 ## Post Function
