@@ -17,18 +17,19 @@ type LRUCache_Inmemory struct {
 	mu          sync.Mutex    // Mutex for concurrent access to cache data structures
 }
 
-// NewLRUCache initializes and returns a new LRUCache instance.
+// NewLRUCache_Inmemory initializes and returns a new LRUCache instance.
 func NewLRUCache_Inmemory(cleanupTime time.Duration) *LRUCache_Inmemory {
 	c := &LRUCache_Inmemory{
-		cache: make(map[string]*list.Element),
-		list:  list.New(),
-
+		cache:       make(map[string]*list.Element),
+		list:        list.New(),
 		cleanupTime: cleanupTime,
 	}
-	go c.startCleanupRoutine() // Start a goroutine for periodic cache cleanup
+	// Start a goroutine for periodic cache cleanup
+	go c.startCleanupRoutine()
 	return c
 }
 
+// startCleanupRoutine runs a cleanup process periodically to remove expired cache entries.
 func (c *LRUCache_Inmemory) startCleanupRoutine() {
 	ticker := time.NewTicker(c.cleanupTime)
 	defer ticker.Stop()
@@ -54,6 +55,7 @@ func (c *LRUCache_Inmemory) cleanup() {
 	}
 }
 
+// Print returns a string representation of the cache contents.
 func (c *LRUCache_Inmemory) Print() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -65,23 +67,24 @@ func (c *LRUCache_Inmemory) Print() string {
 		if node.ExpireAt.IsZero() || node.ExpireAt.After(now) {
 			orderedItems = append(orderedItems, fmt.Sprintf("%s:%s", node.Key, node.Value))
 		} else {
+			// Remove expired node from the linked list and delete from map
 			c.list.Remove(elem)
 			delete(c.cache, node.Key)
 		}
 		elem = next
 	}
 	return strings.Join(orderedItems, ", ")
-
 }
 
+// Del_all clears the entire cache.
 func (c *LRUCache_Inmemory) Del_all() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.list.Init()                            // Clear the linked list
 	c.cache = make(map[string]*list.Element) // Reset the cache map
-
 }
 
+// Del_key removes a key-value pair from the cache by key.
 func (c *LRUCache_Inmemory) Del_key(key string) string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -91,13 +94,14 @@ func (c *LRUCache_Inmemory) Del_key(key string) string {
 		return "key is deleted successfully"
 	}
 	return "key is not present"
-
 }
 
+// Set adds or updates a key-value pair in the cache with an optional TTL and ensures the cache size does not exceed length.
 func (c *LRUCache_Inmemory) Set(key string, value string, length int, ttl int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if elem, found := c.cache[key]; found {
+		// Update existing element
 		node := elem.Value.(*core.CacheNode)
 		node.Value = value
 		if ttl > 0 {
@@ -119,9 +123,9 @@ func (c *LRUCache_Inmemory) Set(key string, value string, length int, ttl int) {
 	newNode := &core.CacheNode{Key: key, Value: value, ExpireAt: expireAt}
 	entry := c.list.PushFront(newNode)
 	c.cache[key] = entry
-
 }
 
+// evict removes the least recently used (LRU) element from the cache.
 func (c *LRUCache_Inmemory) evict() {
 	if evicted := c.list.Back(); evicted != nil {
 		c.list.Remove(evicted)
@@ -129,13 +133,15 @@ func (c *LRUCache_Inmemory) evict() {
 	}
 }
 
+// Get retrieves a value from the cache by key and updates its position to the front.
 func (c *LRUCache_Inmemory) Get(key string) string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if elem, found := c.cache[key]; found {
 		node := elem.Value.(*core.CacheNode)
 		if node.ExpireAt.IsZero() || node.ExpireAt.After(time.Now()) {
-			c.list.MoveToFront(elem) // Move accessed item to the front of the list
+			// Move accessed item to the front of the list
+			c.list.MoveToFront(elem)
 			return node.Value
 		}
 		// Remove the expired element from both the list and the map
@@ -143,5 +149,4 @@ func (c *LRUCache_Inmemory) Get(key string) string {
 		delete(c.cache, key)
 	}
 	return "" // Return empty string if key not found or expired
-
 }

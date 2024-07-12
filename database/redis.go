@@ -16,7 +16,7 @@ type LRUCache_Redis struct {
 
 var ctx = context.Background()
 
-// NewLRUCache initializes and returns a new LRUCache instance connected to Redis
+// NewLRUCache_Redis initializes and returns a new LRUCache instance connected to Redis
 func NewLRUCache_Redis() *LRUCache_Redis {
 	opts := &redis.Options{
 		Addr:     "localhost:6379", // Redis server address
@@ -32,6 +32,7 @@ func NewLRUCache_Redis() *LRUCache_Redis {
 	}
 }
 
+// Print returns a string representation of the cache
 func (c *LRUCache_Redis) Print() string {
 	// Get all keys from the cache list
 	keys, err := c.client.LRange(ctx, "cache", 0, -1).Result()
@@ -54,11 +55,10 @@ func (c *LRUCache_Redis) Print() string {
 	}
 	// Concatenate the ordered items into a single string
 	return strings.Join(orderedItems, ", ")
-
 }
 
+// Get retrieves a value from the cache by key and updates its position to the front
 func (c *LRUCache_Redis) Get(key string) string {
-
 	// Get the value associated with the key
 	value, err := c.client.Get(ctx, key).Result()
 	if err == redis.Nil {
@@ -73,6 +73,7 @@ func (c *LRUCache_Redis) Get(key string) string {
 	return value
 }
 
+// Del_key removes a key-value pair from the cache by key
 func (c *LRUCache_Redis) Del_key(key string) string {
 	// Check if the key exists
 	exists, err := c.client.Exists(ctx, key).Result()
@@ -92,14 +93,14 @@ func (c *LRUCache_Redis) Del_key(key string) string {
 		return "key is deleted successfully"
 	}
 	return "key is not present"
-
 }
 
+// Del_all clears the entire cache
 func (c *LRUCache_Redis) Del_all() {
 	c.client.FlushAll(ctx)
-
 }
 
+// Set adds or updates a key-value pair in the cache with an optional TTL and ensures the cache size does not exceed maxLength
 func (c *LRUCache_Redis) Set(key, value string, maxLength, ttl int) {
 	// Check if the key already exists
 	exists, err := c.client.Exists(ctx, key).Result()
@@ -124,10 +125,9 @@ func (c *LRUCache_Redis) Set(key, value string, maxLength, ttl int) {
 	}
 	// Ensure cache size does not exceed maxLength
 	c.evictItems(maxLength)
-
 }
 
-// evictItems ensures the cache size does not exceed maxLength
+// evictItems ensures the cache size does not exceed maxLength by evicting the oldest items
 func (c *LRUCache_Redis) evictItems(maxLength int) {
 	// Get current length of the cache
 	length, err := c.client.LLen(ctx, "cache").Result()
